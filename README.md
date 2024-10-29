@@ -49,7 +49,11 @@ http://localhost:8000/
 ## testing:
 
 ### launch tests and coverage generation:
+```zsh
 pytest --cov=app --cov-report=html --cov-report=term-missing --cov-branch tests/
+```
 
 ### open coverage report in browser
+```zsh
 open htmlcov/index.html
+```
