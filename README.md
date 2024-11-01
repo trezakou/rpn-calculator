@@ -24,7 +24,8 @@ To install the necessary packages:
 
 ```bash
 conda activate ENVNAME
-pip install -r requirements.txt
+pip install poetry
+poetry install # --with dev : to install dev dependencies
 ```
 
 This will install the required packages within your venv.

@@ -1,22 +1,23 @@
-from fastapi import APIRouter, HTTPException, Query, status
+from copy import deepcopy
+from enum import Enum
 from typing import Annotated
 from uuid import UUID
-from enum import Enum
-from copy import deepcopy
 
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlmodel import select
+
 from app.db.models import Stack, StackCreate
 from app.db.sessions import SessionDep
-
 
 router = APIRouter(prefix="/rpn", tags=["RPN API"])
 
 
 class Calculator:
-    """Reverse polish notation operations handler"""
+    """Reverse polish notation operations handler."""
 
     class OpEnum(Enum):
-        """All available operations"""
+        """All available operations."""
+
         add = "add"
         multiply = "multiply"
         substract = "substract"
@@ -27,47 +28,46 @@ class Calculator:
         if not isinstance(self.content, list):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Stack content should be a list"
+                detail="Stack content should be a list",
             )
         if not all(isinstance(x, (int, float)) for x in self.content):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="All elements in the stack should be float or integer"
+                detail="All elements in the stack should be float or integer",
             )
         if len(self.content) < 2:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="stack should contain at least twos elements"
+                detail="stack should contain at least twos elements",
             )
 
     def apply_operand(self, op: OpEnum) -> list:
-        B = self.content.pop()
-        A = self.content.pop()
+        b = self.content.pop()
+        a = self.content.pop()
         match op:
             case self.OpEnum.add:
-                self.content.append(A + B)
+                self.content.append(a + b)
             case self.OpEnum.substract:
-                self.content.append(A - B)
+                self.content.append(a - b)
             case self.OpEnum.multiply:
-                self.content.append(A * B)
+                self.content.append(a * b)
             case self.OpEnum.divide:
-                if not B:
+                if not b:
                     raise HTTPException(
                         status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-                        detail="Cannot divide by 0"
+                        detail="Cannot divide by 0",
                     )
-                self.content.append(A / B)
+                self.content.append(a / b)
             case _:
                 raise HTTPException(
                     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                    detail="Operation not implemented"
+                    detail="Operation not implemented",
                 )
         return self.content
 
 
 @router.get("/op")
-def get_all_available_operands(
-):
+def get_all_available_operands():
     return list(Calculator.OpEnum._member_map_.values())
 
 
@@ -92,9 +92,7 @@ def read_stacks(
     return stacks
 
 
-@router.delete(
-    "/stack/{stack_id}", summary="Delete a stack"
-)
+@router.delete("/stack/{stack_id}", summary="Delete a stack")
 def delete_stack(session: SessionDep, stack_id: UUID):
     stack = session.get(Stack, stack_id)
     if not stack:
@@ -107,7 +105,7 @@ def delete_stack(session: SessionDep, stack_id: UUID):
 @router.post(
     "/stack/{stack_id}",
     response_model=Stack,
-    summary="Push a new value to a stack"
+    summary="Push a new value to a stack",
 )
 def update_stack(session: SessionDep, stack_id: UUID, new_value: float):
     stack_db = session.get(Stack, stack_id)
@@ -120,11 +118,7 @@ def update_stack(session: SessionDep, stack_id: UUID, new_value: float):
     return stack_db
 
 
-@router.get(
-    "/stack/{stack_id}",
-    response_model=Stack,
-    summary="Get a stack"
-)
+@router.get("/stack/{stack_id}", response_model=Stack, summary="Get a stack")
 def get_stack(session: SessionDep, stack_id: UUID):
     stack_db = session.get(Stack, stack_id)
     if not stack_db:
@@ -135,17 +129,17 @@ def get_stack(session: SessionDep, stack_id: UUID):
 @router.post(
     "/op/{op}/stack/{stack_id}",
     response_model=Stack,
-    summary="Apply an operand to a stack"
+    summary="Apply an operand to a stack",
 )
 def apply_operand_to_stack(
-    session: SessionDep,
-    stack_id: UUID,
-    op: Calculator.OpEnum
+    session: SessionDep, stack_id: UUID, op: Calculator.OpEnum
 ):
     stack_db = session.get(Stack, stack_id)
     if not stack_db:
         raise HTTPException(status_code=404, detail="Stack not found")
-    stack_db.content = Calculator(deepcopy(stack_db.content)).apply_operand(op=op)
+    stack_db.content = Calculator(deepcopy(stack_db.content)).apply_operand(
+        op=op
+    )
     session.add(stack_db)
     session.commit()
     session.refresh(stack_db)
