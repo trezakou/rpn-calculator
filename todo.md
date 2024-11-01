@@ -1,4 +1,4 @@
-# Improvements and shortcuts:
+# Improvements and shortcuts
 
     - Logging should be implemented
 
