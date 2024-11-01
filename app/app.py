@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from app.db.sessions import create_db_and_tables
 from app.routers import rpn
 
