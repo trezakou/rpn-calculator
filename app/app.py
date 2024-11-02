@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 
 from app.db.sessions import create_db_and_tables
-from app.routers import rpn
+from app.routers import rpn, rpn_temporal
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="RPN Calculator", docs_url="/")
     app.include_router(rpn.router)
+    app.include_router(rpn_temporal.router)
 
     @app.on_event("startup")
     def on_startup():

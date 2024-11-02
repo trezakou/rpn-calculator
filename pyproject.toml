@@ -17,6 +17,8 @@ SQLAlchemy = "^2.0.36"
 sqlmodel = "^0.0.22"
 typing-extensions = "^4.12.2"
 temporalio = "^1.8.0"
+aiosqlite = "^0.20.0"
+greenlet = "^3.1.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -57,6 +59,7 @@ ignore = [
     "D107", # Missing docstring in `__init__`
     "D102", # Missing docstring in public method
     "D104", # Missing docstring in public package
+    "B904", # raise
 ]
 
 [tool.ruff.lint.pydocstyle]
