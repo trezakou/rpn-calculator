@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from enum import Enum
 from uuid import UUID
 
@@ -7,7 +8,6 @@ from temporalio.client import Client
 
 from app.db.models import Stack, StackCreate
 from app.db.sessions import AsyncSessionDep
-from stack_types import StackInfo
 from workflows import RPNCalculatorWorkflow
 
 router = APIRouter(
@@ -26,33 +26,6 @@ class OperationType(str, Enum):
 def get_workflow_id(stack_id: UUID) -> str:
     """Standardize workflow ID creation."""
     return f"rpn-calculator-{stack_id}"
-
-
-@router.post("/stack", response_model=Stack)
-async def create_stack(stack: StackCreate, session: AsyncSessionDep):
-    # Create stack in database first
-    db_stack = Stack.model_validate(stack)
-    session.add(db_stack)
-    await session.commit()
-    await session.refresh(db_stack)
-
-    # Initialize Temporal client
-    client = await Client.connect("localhost:7233")
-
-    # Create workflow ID from stack ID
-    workflow_id = get_workflow_id(db_stack.id)
-
-    # Start the workflow
-    handle = await client.start_workflow(
-        RPNCalculatorWorkflow.run,
-        db_stack.id,
-        id=workflow_id,
-        task_queue="rpn-task-queue",
-    )
-
-    # Get the result and convert back to Stack model
-    result: StackInfo = await handle.result()
-    return Stack(id=result.id, content=result.content)
 
 
 @router.post("/stack/long-running", response_model=Stack)
@@ -144,7 +117,13 @@ async def get_stack(stack_id: UUID):
     try:
         handle = client.get_workflow_handle(workflow_id)
         result = await handle.query(RPNCalculatorWorkflow.get_current_stack)
-        return Stack(id=result.id, content=result.content)
+        return Stack(
+            id=result.id,
+            content=result.content,
+            created_at=datetime.strptime(
+                result.created_at, "%a %b %d %H:%M:%S %Y"
+            ),
+        )
     except Exception as e:
         raise HTTPException(
             status_code=404,

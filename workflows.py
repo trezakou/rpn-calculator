@@ -16,6 +16,7 @@ class RPNCalculatorWorkflow:
     def __init__(self) -> None:
         self._stack_id: Optional[UUID] = None
         self._stack_content: List[float] = []
+        self._created_at: Optional[str] = None
         self._exit_signal_received = False
 
     @workflow.run
@@ -32,6 +33,7 @@ class RPNCalculatorWorkflow:
 
         # Store content locally
         self._stack_content = initial_stack.content
+        self._created_at = initial_stack.created_at
 
         await workflow.execute_activity(
             RPNCalculatorActivities.validate_stack,
@@ -51,14 +53,22 @@ class RPNCalculatorWorkflow:
                 continue
 
         # Return final state
-        return StackInfo(id=self._stack_id, content=self._stack_content)
+        return StackInfo(
+            id=self._stack_id,
+            content=self._stack_content,
+            created_at=self._created_at,
+        )
 
     @workflow.query
     def get_current_stack(self) -> StackInfo:
         """Query current stack state from workflow memory."""
         if not self._stack_id:
             raise ApplicationError("Stack not initialized")
-        return StackInfo(id=self._stack_id, content=self._stack_content)
+        return StackInfo(
+            id=self._stack_id,
+            content=self._stack_content,
+            created_at=self._created_at,
+        )
 
     @workflow.signal
     async def push_value(self, value: float) -> None:
