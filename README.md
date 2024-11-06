@@ -60,3 +60,16 @@ pytest --cov=app --cov-report=html --cov-report=term-missing --cov-branch tests/
 ```zsh
 open htmlcov/index.html
 ```
+
+### Temporal
+
+Run the temporal server and worker before calling the RPN Temporal endpoints
+
+```zsh
+temporal server start-dev
+```
+
+```zsh
+python run_worker.py
+
+```

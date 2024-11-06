@@ -38,15 +38,16 @@ async_session = sessionmaker(
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency for getting async session."""
-    async with async_session() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+    # async with async_session() as session:
+    session = async_session()
+    try:
+        yield session
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
+    finally:
+        await session.close()
 
 
 AsyncSessionDep = Annotated[AsyncSession, Depends(get_async_session)]
