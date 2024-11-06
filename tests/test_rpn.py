@@ -1,11 +1,13 @@
-from fastapi import HTTPException
+from uuid import UUID
+
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
-from uuid import UUID
-from app.main import app  # Assuming your FastAPI app is in main.py
+
 from app.db.sessions import get_session
+from app.main import app
 from app.routers.rpn import Calculator
 
 # Setup in-memory database for testing
@@ -33,14 +35,12 @@ def client_fixture(session: Session):
     yield client
     app.dependency_overrides.clear()
 
+
 # Test cases for stack CRUD operations
 
 
 def test_create_stack(client):
-    response = client.post(
-        "/rpn/stack",
-        json={"content": [1.0, 2.0, 3.0]}
-    )
+    response = client.post("/rpn/stack", json={"content": [1.0, 2.0, 3.0]})
     assert response.status_code == 200
     data = response.json()
     assert "id" in data
@@ -50,10 +50,7 @@ def test_create_stack(client):
 
 def test_create_invalid_stack(client):
     # Test with non-numeric values
-    response = client.post(
-        "/rpn/stack",
-        json={"content": [1, "two", 3]}
-    )
+    response = client.post("/rpn/stack", json={"content": [1, "two", 3]})
     assert response.status_code == 422
 
 
@@ -84,7 +81,8 @@ def test_get_stack(client):
 
 def test_get_nonexistent_stack(client):
     response = client.get(
-        f"/rpn/stack/{UUID('00000000-0000-0000-0000-000000000000')}")
+        f"/rpn/stack/{UUID('00000000-0000-0000-0000-000000000000')}"
+    )
     assert response.status_code == 404
 
 
@@ -103,7 +101,7 @@ def test_delete_stack(client):
 
 
 def test_stack_not_found(client):
-    stack_id = UUID('00000000-0000-0000-0000-000000000000')
+    stack_id = UUID("00000000-0000-0000-0000-000000000000")
     op = "add"
 
     # update
@@ -135,16 +133,20 @@ def test_get_available_operands(client):
     response = client.get("/rpn/op")
     assert response.status_code == 200
     operands = response.json()
-    assert all(op in operands for op in [
-               "add", "multiply", "substract", "divide"])
+    assert all(
+        op in operands for op in ["add", "multiply", "substract", "divide"]
+    )
 
 
-@pytest.mark.parametrize("op,initial,expected", [
-    ("add", [2.0, 3.0], [5.0]),
-    ("substract", [5.0, 3.0], [2.0]),
-    ("multiply", [2.0, 3.0], [6.0]),
-    ("divide", [6.0, 2.0], [3.0]),
-])
+@pytest.mark.parametrize(
+    "op,initial,expected",
+    [
+        ("add", [2.0, 3.0], [5.0]),
+        ("substract", [5.0, 3.0], [2.0]),
+        ("multiply", [2.0, 3.0], [6.0]),
+        ("divide", [6.0, 2.0], [3.0]),
+    ],
+)
 def test_apply_operand(client, op, initial, expected):
     # Create a test stack
     stack = client.post("/rpn/stack", json={"content": initial}).json()
@@ -180,7 +182,7 @@ def test_invalid_operation(client):
 def test_pagination(client):
     # Create multiple stacks
     for i in range(5):
-        client.post("/rpn/stack", json={"content": [float(i), float(i+1)]})
+        client.post("/rpn/stack", json={"content": [float(i), float(i + 1)]})
 
     # Test with limit
     response = client.get("/rpn/stack?limit=2")
@@ -195,7 +197,7 @@ def test_pagination(client):
     assert len(data) == 2
 
 
-def test_Calculator_edge_cases():
+def test_calculator_edge_cases():
     input = ""
     with pytest.raises(HTTPException) as exc_info:
         Calculator(input)
@@ -208,14 +210,21 @@ def test_Calculator_edge_cases():
         Calculator(input)
     assert isinstance(exc_info.value, HTTPException)
     assert exc_info.value.status_code == 422
-    assert exc_info.value.detail == "All elements in the stack should be float or integer"
+    assert (
+        exc_info.value.detail
+        == "All elements in the stack should be float or integer"
+    )
 
-    input = [1,]
+    input = [
+        1,
+    ]
     with pytest.raises(HTTPException) as exc_info:
         Calculator(input)
     assert isinstance(exc_info.value, HTTPException)
     assert exc_info.value.status_code == 422
-    assert exc_info.value.detail == "stack should contain at least twos elements"
+    assert (
+        exc_info.value.detail == "stack should contain at least twos elements"
+    )
 
 
 def test_operation_not_implemented():

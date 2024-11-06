@@ -1,10 +1,12 @@
 from datetime import datetime
-from sqlmodel import SQLModel, Field, Column, JSON
+from typing import List
 from uuid import UUID, uuid4
+
+from sqlmodel import JSON, Column, Field, SQLModel
 
 
 class Stackbase(SQLModel):
-    content: list[float] = Field(sa_column=Column(JSON))
+    content: List[float] = Field(default=[], sa_column=Column(JSON))
 
 
 class Stack(Stackbase, table=True):
@@ -13,4 +15,4 @@ class Stack(Stackbase, table=True):
 
 
 class StackCreate(Stackbase):
-    ...
+    pass
